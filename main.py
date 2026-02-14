@@ -31,6 +31,9 @@ def telegram_bot(request):
     chat = message.get('chat', {})
     chat_id = chat.get('id')
     
+    logging.info(f"Received message: {message} from chat ID: {chat_id}")
+    send_telegram_message(chat_id, message)
+    
     # Get pupil name from:
     # 1. Forwarded from chat (groups/channels)
     # 2. Forwarded from user
