@@ -14,8 +14,8 @@ BOT_TOKEN = os.environ.get('BOT_TOKEN')
 SHEET_ID = os.environ.get('SHEET_ID')
 
 # Regex patterns
-HW_PATTERN = re.compile(r'^Homework on the topic:\s*(.+)', re.IGNORECASE)
-SCORE_PATTERN = re.compile(r'Total:\s*(\d+)\s*out of\s*(\d+)', re.IGNORECASE)
+HW_PATTERN = re.compile(r'^(?:Homework on the topic|Домашка по теме|Домашнее задание по теме|дз по теме):?\s*(.+)', re.IGNORECASE)
+SCORE_PATTERN = re.compile(r'(?:Total|Итого):?\s*(\d+)\s*(?:out of|из)\s*(\d+)', re.IGNORECASE)
 
 def telegram_bot(request):
     """HTTP Cloud Function to handle Telegram webhook."""
@@ -59,16 +59,16 @@ def telegram_bot(request):
         if HW_PATTERN.match(text):
             topic = HW_PATTERN.match(text).group(1).strip()
             add_homework(pupil_name, topic)
-            send_telegram_message(chat_id, f"✅ Recorded homework: {topic} for {pupil_name}")
+            send_telegram_message(chat_id, f"✅ Записано домашнее задание: {topic} для {pupil_name}")
         elif SCORE_PATTERN.search(text):
             match = SCORE_PATTERN.search(text)
             score = match.group(1)
             max_score = match.group(2)
             add_score(pupil_name, score, max_score)
-            send_telegram_message(chat_id, f"✅ Recorded score: {score}/{max_score} for {pupil_name}")
+            send_telegram_message(chat_id, f"✅ Записана оценка: {score}/{max_score} для {pupil_name}")
     except Exception as e:
         logging.error(f"Error: {e}")
-        send_telegram_message(chat_id, f"❌ Error: {str(e)}")
+        send_telegram_message(chat_id, f"❌ Ошибка: {str(e)}")
 
     return 'OK', 200
 
