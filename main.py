@@ -1,9 +1,10 @@
-import os
-import re
-import logging
 import gspread
 import google.auth
 import requests
+
+import os
+import re
+import logging
 from datetime import datetime
 
 # Configure logging
@@ -14,7 +15,7 @@ BOT_TOKEN = os.environ.get('BOT_TOKEN')
 SHEET_ID = os.environ.get('SHEET_ID')
 
 # Regex patterns
-HW_PATTERN = re.compile(r'^(?:Homework on the topic|Домашка по теме|Домашнее задание по теме|дз по теме):?\s*(.+)', re.IGNORECASE)
+HW_PATTERN = re.compile(r'^(?:Homework on the topic|Домашка по теме|Домашнее задание по теме|дз по теме|домашнее задание|домашнее|дз|домашка):?\s*(.+)', re.IGNORECASE)
 SCORE_PATTERN = re.compile(r'(?:Total|Итого):?\s*(\d+)\s*(?:out of|из)\s*(\d+)', re.IGNORECASE)
 
 def telegram_bot(request):
