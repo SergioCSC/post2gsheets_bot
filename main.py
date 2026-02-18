@@ -15,7 +15,8 @@ BOT_TOKEN = os.environ.get('BOT_TOKEN')
 SHEET_ID = os.environ.get('SHEET_ID')
 
 # Regex patterns
-HW_PATTERN = re.compile(r'^(?:Homework on the topic|Домашка по теме|Домашнее задание по теме|дз по теме|домашнее задание|домашнее|дз|домашка):?\s*(.+)', re.IGNORECASE)
+HW_PREFIX_PATTERN = re.compile(r'^(?:Homework on the topic|Домашка по теме|Домашнее задание по теме|дз по теме|домашнее задание|домашнее|дз|домашка):?', re.IGNORECASE)
+HW_TOPIC_PATTERN = re.compile(r'["«]([^"»]+)["»]')
 SCORE_PATTERN = re.compile(r'(?:Total|Итого):?\s*(\d+)\s*(?:out of|из)\s*(\d+)', re.IGNORECASE)
 
 def telegram_bot(request):
@@ -60,10 +61,14 @@ def telegram_bot(request):
     pupil_name = re.sub(r'[\\/:\?\*\[\]]', '_', pupil_name)[:31]
 
     try:
-        if HW_PATTERN.match(text):
-            topic = HW_PATTERN.match(text).group(1).strip()
-            add_homework(pupil_name, topic)
-            send_telegram_message(chat_id, f"✅ Записано домашнее задание: {topic} для {pupil_name}")
+        if HW_PREFIX_PATTERN.match(text):
+            topic_match = HW_TOPIC_PATTERN.search(text)
+            if topic_match:
+                topic = topic_match.group(1).strip()
+                add_homework(pupil_name, topic)
+                send_telegram_message(chat_id, f"✅ Записано домашнее задание: {topic} для {pupil_name}")
+            else:
+                send_telegram_message(chat_id, f"⚠️ Найдено домашнее задание, но тема дз не обнаружена. Пожалуйста, заключите тему в кавычки (например: дз: \"Тема\").")
         elif SCORE_PATTERN.search(text):
             match = SCORE_PATTERN.search(text)
             score = match.group(1)
