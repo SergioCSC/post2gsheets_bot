@@ -17,7 +17,7 @@ SHEET_ID = os.environ.get('SHEET_ID')
 # Regex patterns
 HW_PREFIX_PATTERN = re.compile(r'^(?:Homework on the topic|Домашка по теме|Домашнее задание по теме|дз по теме|домашнее задание|домашнее|дз|домашка):?', re.IGNORECASE)
 HW_TOPIC_PATTERN = re.compile(r'["«]([^"»]+)["»]')
-SCORE_PATTERN = re.compile(r'(?:Total|Итого):?\s*(\d+)\s*(?:out of|из)\s*(\d+)', re.IGNORECASE)
+SCORE_PATTERN = re.compile(r'(?:Total|Итого):?\s*.*?(\d+)\s*(?:out of|из)\s*(\d+)', re.IGNORECASE)
 
 def telegram_bot(request):
     """HTTP Cloud Function to handle Telegram webhook."""
