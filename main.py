@@ -114,9 +114,12 @@ def add_homework(pupil_name, topic):
     sh = get_sheet()
     try:
         worksheet = sh.worksheet(pupil_name)
+        logging.info(f"Before adding homework: {worksheet.get_all_values()}")
+        if not worksheet.get_all_values() or worksheet.get_all_values() == [[]]:
+            worksheet.append_row(['Время ДЗ', 'Тема', 'Время проверки', 'Оценка', 'Макс. балл'])
     except gspread.exceptions.WorksheetNotFound:
         worksheet = sh.add_worksheet(title=pupil_name, rows="100", cols="6")
-        worksheet.append_row(['Homework Time', 'Topic', 'Check Time', 'Score', 'Max Score'])
+        worksheet.append_row(['Время ДЗ', 'Тема', 'Время проверки', 'Оценка', 'Макс. балл'])
     
     time_str = get_georgian_time().strftime('%Y-%m-%d %H:%M:%S')
     worksheet.append_row([time_str, topic, '', '', ''])
@@ -128,15 +131,15 @@ def add_score(pupil_name, score, max_score):
         worksheet = sh.worksheet(pupil_name)
     except gspread.exceptions.WorksheetNotFound:
         worksheet = sh.add_worksheet(title=pupil_name, rows="100", cols="6")
-        worksheet.append_row(['Homework Time', 'Topic', 'Check Time', 'Score', 'Max Score'])
+        worksheet.append_row(['Время ДЗ', 'Тема', 'Время проверки', 'Оценка', 'Макс. балл'])
         time_str = get_georgian_time().strftime('%Y-%m-%d %H:%M:%S')
-        worksheet.append_row(['', 'Unknown Topic', time_str, score, max_score])
+        worksheet.append_row(['', 'Без темы', time_str, score, max_score])
         return
 
     values = worksheet.get_all_values()
     if len(values) < 2:
         time_str = get_georgian_time().strftime('%Y-%m-%d %H:%M:%S')
-        worksheet.append_row(['', 'Unknown Topic', time_str, score, max_score])
+        worksheet.append_row(['', 'Без темы', time_str, score, max_score])
         return
 
     # Look for the last row with empty score (column 4)
