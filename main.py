@@ -10,6 +10,9 @@ from datetime import datetime, timezone, timedelta
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
+# HTTP / requests configuration
+REQUEST_TIMEOUT_SECONDS = 10
+
 # Environment variables
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 SHEET_ID = os.environ.get('SHEET_ID')
@@ -17,7 +20,7 @@ SHEET_ID = os.environ.get('SHEET_ID')
 # Regex patterns
 HW_PREFIX_PATTERN = re.compile(r'^(?:Homework on the topic|Домашка по теме|Домашнее задание по теме|дз по теме|домашнее задание|домашнее|дз|домашка):?', re.IGNORECASE)
 HW_TOPIC_PATTERN = re.compile(r'["«]([^"»]+)["»]')
-SCORE_PATTERN = re.compile(r'(?:Total|Итого):?\s*.*?(\d+)\s*(?:out of|из)\s*(\d+)', re.IGNORECASE)
+SCORE_PATTERN = re.compile(r'(?:Total|Итого):?\s*.*?(\d+(?:[.,]\d+)?)\s*(?:out of|из)\s*(\d+)', re.IGNORECASE)
 
 def telegram_bot(request):
     """HTTP Cloud Function to handle Telegram webhook."""
@@ -75,10 +78,14 @@ def telegram_bot(request):
         elif SCORE_PATTERN.search(text):
             logging.info(f"Detected score message: {text.splitlines()[-1]}")
             match = SCORE_PATTERN.search(text)
-            score = match.group(1)
+            raw_score = match.group(1)
             max_score = match.group(2)
-            add_score(pupil_name, score, max_score)
-            send_telegram_message(chat_id, f"✅ Записана оценка: {score}/{max_score} для {pupil_name}")
+
+            # Normalize decimal separator to dot so that values like "2,5" become "2.5"
+            normalized_score = raw_score.replace(',', '.')
+
+            add_score(pupil_name, normalized_score, max_score)
+            send_telegram_message(chat_id, f"✅ Записана оценка: {normalized_score}/{max_score} для {pupil_name}")
     except Exception as e:
         logging.error(f"Error: {e}")
         send_telegram_message(chat_id, f"❌ Ошибка: {str(e)}")
@@ -93,7 +100,7 @@ def send_telegram_message(chat_id, text):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload = {'chat_id': chat_id, 'text': text}
     try:
-        requests.post(url, json=payload)
+        requests.post(url, json=payload, timeout=REQUEST_TIMEOUT_SECONDS)
     except Exception as e:
         logging.error(f"Failed to send message: {e}")
 
