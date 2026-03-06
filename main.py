@@ -148,18 +148,8 @@ def add_score(pupil_name, score, max_score):
         time_str = get_georgian_time().strftime('%Y-%m-%d %H:%M:%S')
         worksheet.append_row(['', 'Без темы', time_str, score, max_score])
         return
-
-    # Look for the last row with empty score (column 4)
-    for i in range(len(values), 1, -1):
-        row = values[i-1]
-        if len(row) < 4 or not str(row[3]).strip():
-            check_time_str = get_georgian_time().strftime('%Y-%m-%d %H:%M:%S')
-            worksheet.update_cell(i, 3, check_time_str)
-            worksheet.update_cell(i, 4, score)
-            worksheet.update_cell(i, 5, max_score)
-            return
     
-    # If no empty score found, update the very last row
+    # Update the very last row
     last_row_idx = len(values)
     check_time_str = get_georgian_time().strftime('%Y-%m-%d %H:%M:%S')
     worksheet.update_cell(last_row_idx, 3, check_time_str)
