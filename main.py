@@ -66,9 +66,9 @@ def telegram_bot(request):
     # Clean chat title for worksheet title
     chat_title = re.sub(r'[\\/:\?\*\[\]]', '_', chat_title)[:31]
 
-    message_unixtime = message.get('forward_origin', {}).get('forward_date') or message.get('forward_date') or message.get('date')
-    message_unixtime = message_unixtime or get_georgian_timestamp()
-    message_time_str = message_unixtime.strftime('%Y-%m-%d %H:%M:%S')
+    message_unixtimestamp: float = message.get('forward_origin', {}).get('forward_date') or message.get('forward_date') or message.get('date')
+    message_unixtimestamp = message_unixtimestamp or get_georgian_timestamp()
+    message_time_str = datetime.fromtimestamp(message_unixtimestamp).strftime('%Y-%m-%d %H:%M:%S')
 
     logging.info(f"Determined chat title: {chat_title}")
     
@@ -118,10 +118,10 @@ def get_sheet():
     gc = gspread.authorize(credentials)
     return gc.open_by_key(SHEET_ID)
 
-def get_georgian_timestamp() -> str:
+def get_georgian_timestamp() -> float:
     """Get current time in Georgia (UTC+4)."""
     tbilisi_tz = timezone(timedelta(hours=4))
-    return str(int(datetime.now(tbilisi_tz).timestamp()))
+    return datetime.now(tbilisi_tz).timestamp()
 
 def add_homework(chat_title, time_str, topic):
     logging.info(f"Adding homework for {chat_title}: {topic}")
