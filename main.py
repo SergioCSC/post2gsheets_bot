@@ -32,7 +32,7 @@ def telegram_bot(request):
         return 'Invalid update', 200
 
     message = update['message']
-    text = message.get('text', '')
+    text = message.get('text', '') or message.get('caption', '')
     chat = message.get('chat', {})
     chat_id = chat.get('id')
     
