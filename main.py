@@ -66,6 +66,10 @@ def telegram_bot(request):
     # Clean chat title for worksheet title
     chat_title = re.sub(r'[\\/:\?\*\[\]]', '_', chat_title)[:31]
 
+    message_unixtime = message.get('forward_origin', {}).get('forward_date') or message.get('forward_date') or message.get('date')
+    message_unixtime = message_unixtime or get_georgian_timestamp()
+    message_time_str = message_unixtime.strftime('%Y-%m-%d %H:%M:%S')
+
     logging.info(f"Determined chat title: {chat_title}")
     
     try:
@@ -74,7 +78,7 @@ def telegram_bot(request):
             topic_match = HW_TOPIC_PATTERN.search(text)
             if topic_match:
                 topic = topic_match.group(1).strip()
-                add_homework(chat_title, topic)
+                add_homework(chat_title, message_time_str, topic)
                 send_telegram_message(chat_id, f"✅ Записано домашнее задание: {topic} для {chat_title}")
             else:
                 send_telegram_message(chat_id, f"⚠️ Найдено домашнее задание, но тема дз не обнаружена. Пожалуйста, заключите тему в кавычки (например: дз: \"Тема\").")
@@ -87,7 +91,7 @@ def telegram_bot(request):
             # Normalize decimal separator to dot so that values like "2,5" become "2.5"
             normalized_score = raw_score.replace(',', '.')
 
-            add_score(chat_title, normalized_score, max_score)
+            add_score(chat_title, message_time_str, normalized_score, max_score)
             send_telegram_message(chat_id, f"✅ Записана оценка: {normalized_score}/{max_score} для {chat_title}")
     except Exception as e:
         logging.error(f"Error: {e}")
@@ -114,47 +118,43 @@ def get_sheet():
     gc = gspread.authorize(credentials)
     return gc.open_by_key(SHEET_ID)
 
-def get_georgian_time():
+def get_georgian_timestamp() -> str:
     """Get current time in Georgia (UTC+4)."""
     tbilisi_tz = timezone(timedelta(hours=4))
-    return datetime.now(tbilisi_tz)
+    return str(int(datetime.now(tbilisi_tz).timestamp()))
 
-def add_homework(pupil_name, topic):
-    logging.info(f"Adding homework for {pupil_name}: {topic}")
+def add_homework(chat_title, time_str, topic):
+    logging.info(f"Adding homework for {chat_title}: {topic}")
     sh = get_sheet()
     try:
-        worksheet = sh.worksheet(pupil_name)
+        worksheet = sh.worksheet(chat_title)
         logging.info(f"Before adding homework: {worksheet.get_all_values()}")
         if not worksheet.get_all_values() or worksheet.get_all_values() == [[]]:
             worksheet.append_row(['Время ДЗ', 'Тема', 'Время проверки', 'Оценка', 'Макс. балл'])
     except gspread.exceptions.WorksheetNotFound:
-        worksheet = sh.add_worksheet(title=pupil_name, rows="100", cols="6")
+        worksheet = sh.add_worksheet(title=chat_title, rows="100", cols="6")
         worksheet.append_row(['Время ДЗ', 'Тема', 'Время проверки', 'Оценка', 'Макс. балл'])
     
-    time_str = get_georgian_time().strftime('%Y-%m-%d %H:%M:%S')
     worksheet.append_row([time_str, topic, '', '', ''])
 
-def add_score(pupil_name, score, max_score):
-    logging.info(f"Adding score for {pupil_name}: {score}/{max_score}")
+def add_score(chat_title, time_str, score, max_score):
+    logging.info(f"Adding score for {chat_title}: {score}/{max_score}")
     sh = get_sheet()
     try:
-        worksheet = sh.worksheet(pupil_name)
+        worksheet = sh.worksheet(chat_title)
     except gspread.exceptions.WorksheetNotFound:
-        worksheet = sh.add_worksheet(title=pupil_name, rows="100", cols="6")
+        worksheet = sh.add_worksheet(title=chat_title, rows="100", cols="6")
         worksheet.append_row(['Время ДЗ', 'Тема', 'Время проверки', 'Оценка', 'Макс. балл'])
-        time_str = get_georgian_time().strftime('%Y-%m-%d %H:%M:%S')
         worksheet.append_row(['', 'Без темы', time_str, score, max_score])
         return
 
     values = worksheet.get_all_values()
     if len(values) < 2:
-        time_str = get_georgian_time().strftime('%Y-%m-%d %H:%M:%S')
         worksheet.append_row(['', 'Без темы', time_str, score, max_score])
         return
     
     # Update the very last row
     last_row_idx = len(values)
-    check_time_str = get_georgian_time().strftime('%Y-%m-%d %H:%M:%S')
-    worksheet.update_cell(last_row_idx, 3, check_time_str)
+    worksheet.update_cell(last_row_idx, 3, time_str)
     worksheet.update_cell(last_row_idx, 4, score)
     worksheet.update_cell(last_row_idx, 5, max_score)
