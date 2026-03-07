@@ -60,10 +60,13 @@ def telegram_bot(request):
     if not pupil_name:
         pupil_name = chat.get('title') or chat.get('first_name') or "Unknown"
 
-    # Clean pupil name for worksheet title
-    pupil_name = re.sub(r'[\\/:\?\*\[\]]', '_', pupil_name)[:31]
+    # Get chat title
+    chat_title = chat.get('title') or chat.get('first_name') or pupil_name
+    
+    # Clean chat title for worksheet title
+    chat_title = re.sub(r'[\\/:\?\*\[\]]', '_', chat_title)[:31]
 
-    logging.info(f"Determined pupil name: {pupil_name}")
+    logging.info(f"Determined chat title: {chat_title}")
     
     try:
         if HW_PREFIX_PATTERN.match(text):
@@ -71,8 +74,8 @@ def telegram_bot(request):
             topic_match = HW_TOPIC_PATTERN.search(text)
             if topic_match:
                 topic = topic_match.group(1).strip()
-                add_homework(pupil_name, topic)
-                send_telegram_message(chat_id, f"✅ Записано домашнее задание: {topic} для {pupil_name}")
+                add_homework(chat_title, topic)
+                send_telegram_message(chat_id, f"✅ Записано домашнее задание: {topic} для {chat_title}")
             else:
                 send_telegram_message(chat_id, f"⚠️ Найдено домашнее задание, но тема дз не обнаружена. Пожалуйста, заключите тему в кавычки (например: дз: \"Тема\").")
         elif SCORE_PATTERN.search(text):
@@ -84,8 +87,8 @@ def telegram_bot(request):
             # Normalize decimal separator to dot so that values like "2,5" become "2.5"
             normalized_score = raw_score.replace(',', '.')
 
-            add_score(pupil_name, normalized_score, max_score)
-            send_telegram_message(chat_id, f"✅ Записана оценка: {normalized_score}/{max_score} для {pupil_name}")
+            add_score(chat_title, normalized_score, max_score)
+            send_telegram_message(chat_id, f"✅ Записана оценка: {normalized_score}/{max_score} для {chat_title}")
     except Exception as e:
         logging.error(f"Error: {e}")
         send_telegram_message(chat_id, f"❌ Ошибка: {str(e)}")
