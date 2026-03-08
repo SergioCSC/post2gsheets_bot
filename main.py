@@ -130,12 +130,12 @@ def add_homework(chat_title, time_str, topic):
         worksheet = sh.worksheet(chat_title)
         logging.info(f"Before adding homework: {worksheet.get_all_values()}")
         if not worksheet.get_all_values() or worksheet.get_all_values() == [[]]:
-            worksheet.append_row(['Время ДЗ', 'Тема', 'Время проверки', 'Оценка', 'Макс. балл'])
+            worksheet.append_row(['Время ДЗ', 'Время проверки', 'Тема', 'Оценка', 'Макс. балл'])
     except gspread.exceptions.WorksheetNotFound:
         worksheet = sh.add_worksheet(title=chat_title, rows="100", cols="6")
-        worksheet.append_row(['Время ДЗ', 'Тема', 'Время проверки', 'Оценка', 'Макс. балл'])
+        worksheet.append_row(['Время ДЗ', 'Время проверки', 'Тема', 'Оценка', 'Макс. балл'])
     
-    worksheet.append_row([time_str, topic, '', '', ''])
+    worksheet.append_row([time_str, '', topic, '', ''])
 
 def add_score(chat_title, time_str, score, max_score):
     logging.info(f"Adding score for {chat_title}: {score}/{max_score}")
@@ -144,17 +144,17 @@ def add_score(chat_title, time_str, score, max_score):
         worksheet = sh.worksheet(chat_title)
     except gspread.exceptions.WorksheetNotFound:
         worksheet = sh.add_worksheet(title=chat_title, rows="100", cols="6")
-        worksheet.append_row(['Время ДЗ', 'Тема', 'Время проверки', 'Оценка', 'Макс. балл'])
-        worksheet.append_row(['', 'Без темы', time_str, score, max_score])
+        worksheet.append_row(['Время ДЗ', 'Время проверки', 'Тема', 'Оценка', 'Макс. балл'])
+        worksheet.append_row(['', time_str, 'Без темы', score, max_score])
         return
 
     values = worksheet.get_all_values()
     if len(values) < 2:
-        worksheet.append_row(['', 'Без темы', time_str, score, max_score])
+        worksheet.append_row(['', time_str, 'Без темы', score, max_score])
         return
     
     # Update the very last row
     last_row_idx = len(values)
-    worksheet.update_cell(last_row_idx, 3, time_str)
+    worksheet.update_cell(last_row_idx, 2, time_str)
     worksheet.update_cell(last_row_idx, 4, score)
     worksheet.update_cell(last_row_idx, 5, max_score)
