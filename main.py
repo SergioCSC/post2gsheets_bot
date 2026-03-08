@@ -123,38 +123,76 @@ def get_georgian_timestamp() -> float:
     tbilisi_tz = timezone(timedelta(hours=4))
     return datetime.now(tbilisi_tz).timestamp()
 
+def get_column_indices(headers):
+    def get_idx(name, default_idx):
+        try:
+            return headers.index(name) + 1
+        except ValueError:
+            return default_idx
+    return {
+        'time_dz': get_idx('Время ДЗ', 1),
+        'time_check': get_idx('Время проверки', 2),
+        'topic': get_idx('Тема', 3),
+        'score': get_idx('Оценка', 4),
+        'max_score': get_idx('Макс. балл', 5)
+    }
+
 def add_homework(chat_title, time_str, topic):
     logging.info(f"Adding homework for {chat_title}: {topic}")
     sh = get_sheet()
     try:
         worksheet = sh.worksheet(chat_title)
-        logging.info(f"Before adding homework: {worksheet.get_all_values()}")
-        if not worksheet.get_all_values() or worksheet.get_all_values() == [[]]:
-            worksheet.append_row(['Время ДЗ', 'Время проверки', 'Тема', 'Оценка', 'Макс. балл'])
+        values = worksheet.get_all_values()
+        logging.info(f"Before adding homework: {values}")
+        if not values or values == [[]]:
+            worksheet.append_row(['Время ДЗ', 'Время проверки', 'Тема', 'Оценка', 'Макс. балл'], table_range="A1")
+            headers = ['Время ДЗ', 'Время проверки', 'Тема', 'Оценка', 'Макс. балл']
+        else:
+            headers = values[0]
     except gspread.exceptions.WorksheetNotFound:
         worksheet = sh.add_worksheet(title=chat_title, rows="100", cols="6")
-        worksheet.append_row(['Время ДЗ', 'Время проверки', 'Тема', 'Оценка', 'Макс. балл'])
+        worksheet.append_row(['Время ДЗ', 'Время проверки', 'Тема', 'Оценка', 'Макс. балл'], table_range="A1")
+        headers = ['Время ДЗ', 'Время проверки', 'Тема', 'Оценка', 'Макс. балл']
     
-    worksheet.append_row([time_str, '', topic, '', ''])
+    indices = get_column_indices(headers)
+    max_idx = max(indices.values())
+    row_data = [''] * max_idx
+    row_data[indices['time_dz'] - 1] = time_str
+    row_data[indices['topic'] - 1] = topic
+    
+    worksheet.append_row(row_data, table_range="A1")
 
 def add_score(chat_title, time_str, score, max_score):
     logging.info(f"Adding score for {chat_title}: {score}/{max_score}")
     sh = get_sheet()
     try:
         worksheet = sh.worksheet(chat_title)
+        values = worksheet.get_all_values()
+        if not values or values == [[]]:
+            worksheet.append_row(['Время ДЗ', 'Время проверки', 'Тема', 'Оценка', 'Макс. балл'], table_range="A1")
+            headers = ['Время ДЗ', 'Время проверки', 'Тема', 'Оценка', 'Макс. балл']
+            values = [headers]
+        else:
+            headers = values[0]
     except gspread.exceptions.WorksheetNotFound:
         worksheet = sh.add_worksheet(title=chat_title, rows="100", cols="6")
-        worksheet.append_row(['Время ДЗ', 'Время проверки', 'Тема', 'Оценка', 'Макс. балл'])
-        worksheet.append_row(['', time_str, 'Без темы', score, max_score])
-        return
+        worksheet.append_row(['Время ДЗ', 'Время проверки', 'Тема', 'Оценка', 'Макс. балл'], table_range="A1")
+        headers = ['Время ДЗ', 'Время проверки', 'Тема', 'Оценка', 'Макс. балл']
+        values = [headers]
 
-    values = worksheet.get_all_values()
+    indices = get_column_indices(headers)
+
     if len(values) < 2:
-        worksheet.append_row(['', time_str, 'Без темы', score, max_score])
+        row_data = [''] * max(indices.values())
+        row_data[indices['time_check'] - 1] = time_str
+        row_data[indices['topic'] - 1] = 'Без темы'
+        row_data[indices['score'] - 1] = score
+        row_data[indices['max_score'] - 1] = max_score
+        worksheet.append_row(row_data, table_range="A1")
         return
     
     # Update the very last row
     last_row_idx = len(values)
-    worksheet.update_cell(last_row_idx, 2, time_str)
-    worksheet.update_cell(last_row_idx, 4, score)
-    worksheet.update_cell(last_row_idx, 5, max_score)
+    worksheet.update_cell(last_row_idx, indices['time_check'], time_str)
+    worksheet.update_cell(last_row_idx, indices['score'], score)
+    worksheet.update_cell(last_row_idx, indices['max_score'], max_score)
