@@ -18,11 +18,11 @@ BOT_TOKEN = os.environ.get('BOT_TOKEN')
 SHEET_ID = os.environ.get('SHEET_ID')
 
 # Google Sheets columns configuration
-COL_TIME_DZ = 'Время ДЗ'
-COL_TIME_CHECK = 'Время проверки'
+COL_TIME_DZ = 'Дано ДЗ'
+COL_TIME_CHECK = 'Проверено'
 COL_TOPIC = 'Тема'
 COL_SCORE = 'Оценка'
-COL_MAX_SCORE = 'Макс. балл'
+COL_MAX_SCORE = 'Макс'
 
 SHEET_COLUMNS = [COL_TIME_DZ, COL_TIME_CHECK, COL_TOPIC, COL_SCORE, COL_MAX_SCORE]
 
