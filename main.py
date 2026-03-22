@@ -23,9 +23,8 @@ COL_TIME_CHECK = 'Проверено'
 COL_TOPIC = 'Тема'
 COL_SCORE = 'Оценка'
 COL_MAX_SCORE = 'Макс'
-COL_PERCENT = '%'
 
-SHEET_COLUMNS = [COL_TIME_DZ, COL_TIME_CHECK, COL_TOPIC, COL_SCORE, COL_MAX_SCORE, COL_PERCENT]
+SHEET_COLUMNS = [COL_TIME_DZ, COL_TIME_CHECK, COL_TOPIC, COL_SCORE, COL_MAX_SCORE]
 
 # Regex patterns
 HW_PREFIX_PATTERN = re.compile(r'^(?:Homework on the topic|Домашка по теме|Домашнее задание по теме|дз по теме|домашнее задание|домашнее|дз|домашка):?', re.IGNORECASE)
@@ -144,8 +143,7 @@ def get_column_indices(headers):
         'time_check': get_idx(COL_TIME_CHECK),
         'topic': get_idx(COL_TOPIC),
         'score': get_idx(COL_SCORE),
-        'max_score': get_idx(COL_MAX_SCORE),
-        'percent': get_idx(COL_PERCENT)
+        'max_score': get_idx(COL_MAX_SCORE)
     }
 
 def add_homework(chat_title, time_str, topic):
@@ -193,21 +191,12 @@ def add_score(chat_title, time_str, score, max_score):
 
     indices = get_column_indices(headers)
 
-    try:
-        pct = float(score) / float(max_score)
-        calc_percent = f"{pct:.1%}".replace('.', ',')
-        if calc_percent.endswith(",0%"):
-            calc_percent = calc_percent.replace(",0%", "%")
-    except (ValueError, ZeroDivisionError):
-        calc_percent = ""
-
     if len(values) < 2:
         row_data = [''] * max(indices.values())
         row_data[indices['time_check'] - 1] = time_str
         row_data[indices['topic'] - 1] = 'Без темы'
         row_data[indices['score'] - 1] = score
         row_data[indices['max_score'] - 1] = max_score
-        row_data[indices['percent'] - 1] = calc_percent
         worksheet.append_row(row_data, table_range="A1")
         return
     
@@ -216,4 +205,3 @@ def add_score(chat_title, time_str, score, max_score):
     worksheet.update_cell(last_row_idx, indices['time_check'], time_str)
     worksheet.update_cell(last_row_idx, indices['score'], score)
     worksheet.update_cell(last_row_idx, indices['max_score'], max_score)
-    worksheet.update_cell(last_row_idx, indices['percent'], calc_percent)
