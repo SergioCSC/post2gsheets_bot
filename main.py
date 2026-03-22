@@ -17,6 +17,15 @@ REQUEST_TIMEOUT_SECONDS = 10
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 SHEET_ID = os.environ.get('SHEET_ID')
 
+# Google Sheets columns configuration
+COL_TIME_DZ = 'Время ДЗ'
+COL_TIME_CHECK = 'Время проверки'
+COL_TOPIC = 'Тема'
+COL_SCORE = 'Оценка'
+COL_MAX_SCORE = 'Макс. балл'
+
+SHEET_COLUMNS = [COL_TIME_DZ, COL_TIME_CHECK, COL_TOPIC, COL_SCORE, COL_MAX_SCORE]
+
 # Regex patterns
 HW_PREFIX_PATTERN = re.compile(r'^(?:Homework on the topic|Домашка по теме|Домашнее задание по теме|дз по теме|домашнее задание|домашнее|дз|домашка):?', re.IGNORECASE)
 HW_TOPIC_PATTERN = re.compile(r'["«]([^"»]+)["»]')
@@ -124,17 +133,17 @@ def get_georgian_timestamp() -> float:
     return datetime.now(tbilisi_tz).timestamp()
 
 def get_column_indices(headers):
-    def get_idx(name, default_idx):
+    def get_idx(name):
         try:
             return headers.index(name) + 1
         except ValueError:
-            return default_idx
+            return SHEET_COLUMNS.index(name) + 1
     return {
-        'time_dz': get_idx('Время ДЗ', 1),
-        'time_check': get_idx('Время проверки', 2),
-        'topic': get_idx('Тема', 3),
-        'score': get_idx('Оценка', 4),
-        'max_score': get_idx('Макс. балл', 5)
+        'time_dz': get_idx(COL_TIME_DZ),
+        'time_check': get_idx(COL_TIME_CHECK),
+        'topic': get_idx(COL_TOPIC),
+        'score': get_idx(COL_SCORE),
+        'max_score': get_idx(COL_MAX_SCORE)
     }
 
 def add_homework(chat_title, time_str, topic):
@@ -145,14 +154,14 @@ def add_homework(chat_title, time_str, topic):
         values = worksheet.get_all_values()
         logging.info(f"Before adding homework: {values}")
         if not values or values == [[]]:
-            worksheet.append_row(['Время ДЗ', 'Время проверки', 'Тема', 'Оценка', 'Макс. балл'], table_range="A1")
-            headers = ['Время ДЗ', 'Время проверки', 'Тема', 'Оценка', 'Макс. балл']
+            worksheet.append_row(SHEET_COLUMNS, table_range="A1")
+            headers = SHEET_COLUMNS
         else:
             headers = values[0]
     except gspread.exceptions.WorksheetNotFound:
         worksheet = sh.add_worksheet(title=chat_title, rows="100", cols="6")
-        worksheet.append_row(['Время ДЗ', 'Время проверки', 'Тема', 'Оценка', 'Макс. балл'], table_range="A1")
-        headers = ['Время ДЗ', 'Время проверки', 'Тема', 'Оценка', 'Макс. балл']
+        worksheet.append_row(SHEET_COLUMNS, table_range="A1")
+        headers = SHEET_COLUMNS
     
     indices = get_column_indices(headers)
     max_idx = max(indices.values())
@@ -169,15 +178,15 @@ def add_score(chat_title, time_str, score, max_score):
         worksheet = sh.worksheet(chat_title)
         values = worksheet.get_all_values()
         if not values or values == [[]]:
-            worksheet.append_row(['Время ДЗ', 'Время проверки', 'Тема', 'Оценка', 'Макс. балл'], table_range="A1")
-            headers = ['Время ДЗ', 'Время проверки', 'Тема', 'Оценка', 'Макс. балл']
+            worksheet.append_row(SHEET_COLUMNS, table_range="A1")
+            headers = SHEET_COLUMNS
             values = [headers]
         else:
             headers = values[0]
     except gspread.exceptions.WorksheetNotFound:
         worksheet = sh.add_worksheet(title=chat_title, rows="100", cols="6")
-        worksheet.append_row(['Время ДЗ', 'Время проверки', 'Тема', 'Оценка', 'Макс. балл'], table_range="A1")
-        headers = ['Время ДЗ', 'Время проверки', 'Тема', 'Оценка', 'Макс. балл']
+        worksheet.append_row(SHEET_COLUMNS, table_range="A1")
+        headers = SHEET_COLUMNS
         values = [headers]
 
     indices = get_column_indices(headers)
